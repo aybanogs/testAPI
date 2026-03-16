@@ -1,23 +1,34 @@
-name: Run Postman Collection
+name: Postman API Tests
+
 on:
   push:
-    branches: [main]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main]
-jobs:
-  run-postman:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+    branches: [ main ]
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4.4.0
-        with:
-          node-version: '18'
+jobs:
+  postman-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install Newman
         run: npm install -g newman
 
+      - name: Create results folder
+        run: mkdir -p results
+
       - name: Run Postman Collection
-        run: newman run ./IVAN.postman_collection.json
+        run: |
+          newman run IVAN.postman_collection.json \
+            --reporters cli,junit \
+            --reporter-junit-export results/newman-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: newman-results
+          path: results/newman-results.xml
